@@ -77,7 +77,7 @@ export function useGameStorage() {
           durationSeconds: params.durationSeconds,
           dna: {
             aggressionScore: params.dna.aggressionScore,
-            captureCount: params.dna.captureCount,
+            captureCount: Math.round(params.dna.captureRatio * params.dna.moveCount),
             pawnAdvanceScore: params.dna.pawnAdvanceScore,
             moveCount: params.dna.moveCount,
             highlightCaptions: params.highlightCaptions.map((h) => h.text),
