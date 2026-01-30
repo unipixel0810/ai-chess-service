@@ -198,8 +198,6 @@ export function ChessBoard() {
         boardWidth={400}
         arePiecesDraggable={!isThinking && game.turn() === "w"}
         boardOrientation="white"
-        autoPromoteToQueen
-        showBoardOrientation
       />
       {isThinking && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
