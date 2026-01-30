@@ -37,23 +37,24 @@ function ensureWorker(): Promise<boolean> {
   if (workerReady && worker) return Promise.resolve(true);
   if (initPromise) return initPromise;
   
-  worker = createWorker();
-  if (!worker) {
+  const w = createWorker();
+  if (!w) {
     initPromise = Promise.resolve(false);
     return initPromise;
   }
+  worker = w;
   
   initPromise = new Promise<boolean>((resolve) => {
     // 2초 내 응답 없으면 실패 (빠른 폴백)
     const timeout = setTimeout(() => {
-      worker?.terminate();
+      w.terminate();
       worker = null;
       resolve(false);
     }, 2000);
     
-    worker.onerror = () => {
+    w.onerror = () => {
       clearTimeout(timeout);
-      worker?.terminate();
+      w.terminate();
       worker = null;
       resolve(false);
     };
@@ -62,13 +63,13 @@ function ensureWorker(): Promise<boolean> {
       const data = typeof e.data === "string" ? e.data : (e.data?.payload as string) || "";
       if (data.includes("readyok")) {
         workerReady = true;
-        worker?.removeEventListener("message", onMessage);
+        w.removeEventListener("message", onMessage);
         clearTimeout(timeout);
         resolve(true);
       }
     };
-    worker.addEventListener("message", onMessage);
-    worker.postMessage("uci");
+    w.addEventListener("message", onMessage);
+    w.postMessage("uci");
   });
   return initPromise;
 }
@@ -100,12 +101,13 @@ export function getMoveFromStockfish(
   blunder: boolean
 ): Promise<StockfishMove | null> {
   return ensureWorker().then((ready) => {
-    if (!ready || !worker) return Promise.resolve(null);
+    const w = worker;
+    if (!ready || !w) return Promise.resolve(null);
     const searchDepth = blunder ? 1 : Math.max(1, Math.min(depth, 8)); // 최대 depth 8로 제한
     return new Promise((resolve) => {
       // 3초 타임아웃 (빠른 응답)
       const timeout = setTimeout(() => {
-        worker?.removeEventListener("message", onMessage);
+        w.removeEventListener("message", onMessage);
         resolve(null);
       }, 3000);
       
@@ -115,15 +117,15 @@ export function getMoveFromStockfish(
         buffer += data.includes("\n") ? data : data + "\n";
         const bestmoveLine = buffer.split("\n").find((l) => l.startsWith("bestmove"));
         if (bestmoveLine) {
-          worker?.removeEventListener("message", onMessage);
+          w.removeEventListener("message", onMessage);
           clearTimeout(timeout);
           resolve(parseBestMove(bestmoveLine));
         }
       };
-      worker.addEventListener("message", onMessage);
-      worker.postMessage("ucinewgame");
-      worker.postMessage(`position fen ${fen}`);
-      worker.postMessage(`go depth ${searchDepth}`);
+      w.addEventListener("message", onMessage);
+      w.postMessage("ucinewgame");
+      w.postMessage(`position fen ${fen}`);
+      w.postMessage(`go depth ${searchDepth}`);
     });
   });
 }

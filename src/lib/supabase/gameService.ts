@@ -1,5 +1,32 @@
 import { supabase } from "./client";
-import type { GameRecordInsert, DnaRecordInsert, MoveRecordInsert } from "./types";
+
+// 간소화된 타입 (Supabase 타입 호환 문제 우회)
+type GameRecordInsert = {
+  result: "win" | "lose" | "draw";
+  total_moves: number;
+  final_fen: string;
+  duration_seconds?: number | null;
+};
+
+type DnaRecordInsert = {
+  game_id: string;
+  aggression_score: number;
+  capture_count: number;
+  pawn_advance_score: number;
+  move_count: number;
+  highlight_captions?: string[];
+};
+
+type MoveRecordInsert = {
+  game_id: string;
+  move_number: number;
+  san: string;
+  from_square: string;
+  to_square: string;
+  fen_after: string;
+  is_capture?: boolean;
+  is_check?: boolean;
+};
 
 /**
  * 게임 결과 및 DNA 데이터를 Supabase에 저장
@@ -31,6 +58,8 @@ export async function saveGameResult(params: {
     return { success: false, reason: "not_configured" };
   }
 
+  const db = supabase;
+
   try {
     // 1. 게임 기록 저장
     const gameRecord: GameRecordInsert = {
@@ -40,7 +69,7 @@ export async function saveGameResult(params: {
       duration_seconds: params.durationSeconds ?? null,
     };
 
-    const { data: game, error: gameError } = await supabase
+    const { data: game, error: gameError } = await db
       .from("game_records")
       .insert(gameRecord)
       .select()
@@ -61,7 +90,7 @@ export async function saveGameResult(params: {
       highlight_captions: params.dna.highlightCaptions,
     };
 
-    const { error: dnaError } = await supabase
+    const { error: dnaError } = await db
       .from("dna_records")
       .insert(dnaRecord);
 
@@ -82,7 +111,7 @@ export async function saveGameResult(params: {
         is_check: m.isCheck,
       }));
 
-      const { error: moveError } = await supabase
+      const { error: moveError } = await db
         .from("move_records")
         .insert(moveRecords);
 
@@ -103,8 +132,9 @@ export async function saveGameResult(params: {
  */
 export async function getRecentGames(limit = 10) {
   if (!supabase) return [];
+  const db = supabase;
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("game_records")
     .select(`
       *,
@@ -128,8 +158,9 @@ export async function getPlayerStats() {
   if (!supabase) {
     return { wins: 0, losses: 0, draws: 0, total: 0, winRate: 0 };
   }
+  const db = supabase;
 
-  const { data: games, error } = await supabase
+  const { data: games, error } = await db
     .from("game_records")
     .select("result");
 
@@ -138,9 +169,9 @@ export async function getPlayerStats() {
   }
 
   const stats = {
-    wins: games.filter((g) => g.result === "win").length,
-    losses: games.filter((g) => g.result === "lose").length,
-    draws: games.filter((g) => g.result === "draw").length,
+    wins: games.filter((g: { result: string }) => g.result === "win").length,
+    losses: games.filter((g: { result: string }) => g.result === "lose").length,
+    draws: games.filter((g: { result: string }) => g.result === "draw").length,
     total: games.length,
     winRate: 0,
   };
@@ -162,8 +193,9 @@ export async function getAverageDna() {
       totalGames: 0,
     };
   }
+  const db = supabase;
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("dna_records")
     .select("aggression_score, capture_count, pawn_advance_score");
 
@@ -176,8 +208,10 @@ export async function getAverageDna() {
     };
   }
 
+  type DnaData = { aggression_score: number; capture_count: number; pawn_advance_score: number };
+  type Acc = { aggression: number; captures: number; pawnAdvance: number };
   const sum = data.reduce(
-    (acc, d) => ({
+    (acc: Acc, d: DnaData) => ({
       aggression: acc.aggression + d.aggression_score,
       captures: acc.captures + d.capture_count,
       pawnAdvance: acc.pawnAdvance + d.pawn_advance_score,
