@@ -1,0 +1,2 @@
+# Stockfish Worker: public/stockfish.js 에 엔진 스크립트를 두면 사용됩니다.
+# node_modules/stockfish 에서 Lite Single-threaded *.js (및 *.wasm) 복사 참고.

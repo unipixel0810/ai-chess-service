@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 248 250 252;
+  --background-rgb: 15 23 42;
+  --neon-cyan: 34 211 238;
+  --neon-purple: 168 85 247;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  min-height: 100vh;
+}
+
+/* 다크 모드 기본 */
+html {
+  color-scheme: dark;
+}

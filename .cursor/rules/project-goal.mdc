@@ -1,0 +1,27 @@
+---
+description: 1인용 체스 프로젝트 방향성 및 원칙 (Next.js 14, Tailwind, Framer Motion)
+alwaysApply: true
+---
+
+# 1인용 체스 프로젝트 – 프로젝트 원칙
+
+Next.js 14 (App Router), Tailwind CSS, Framer Motion 기반 1인용 체스 프로젝트입니다.
+
+## 원칙
+
+1. **사용자 DNA 기록**  
+   모든 체스 이동은 '사용자 DNA'로 기록되어야 함 (공격성, 신중함 등).
+
+2. **AI(Stockfish) 역할**  
+   AI는 단순히 이기는 것이 아니라, 유튜브 알고리즘처럼 유저가 몰입할 수 있는 최적의 수를 제안해야 함.
+
+3. **3단계 자막 디자인**  
+   모든 주요 상황(묘수, 실수, 체크)에는 [예능, 상황, 설명] 3단계 자막 디자인이 반드시 포함되어야 함.
+
+## 기술 스택
+
+- Next.js 14 (App Router)
+- Tailwind CSS
+- Framer Motion
+- chess.js
+- react-chessboard
