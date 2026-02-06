@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS game_records (
   total_moves INTEGER NOT NULL,
   final_fen TEXT NOT NULL,
   duration_seconds INTEGER,
-  player_id UUID REFERENCES auth.users(id) ON DELETE SET NULL
+  player_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  real_name TEXT
 );
 
 -- 2. DNA 분석 데이터 테이블
