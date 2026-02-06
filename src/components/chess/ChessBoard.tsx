@@ -10,6 +10,8 @@ import type { GameResult } from "@/lib/marcusFeedback";
 import { GameCaption } from "@/components/ui/captions/GameCaption";
 import { ChessDNAReport, type HighlightCaption } from "./ChessDNAReport";
 import type { Square } from "chess.js";
+import { getCurrentUser } from "@/lib/supabase/auth";
+import { supabase } from "@/lib/supabase/client";
 
 const INITIAL_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -22,6 +24,7 @@ export function ChessBoard() {
   const [game, setGame] = useState(() => new Chess(INITIAL_FEN));
   const [fen, setFen] = useState(INITIAL_FEN);
   const [isThinking, setIsThinking] = useState(false);
+  const [realName, setRealName] = useState<string | null>(null);
   const {
     recordMove,
     aggressionScore,
@@ -40,6 +43,24 @@ export function ChessBoard() {
   const highlightCaptionsRef = useRef<HighlightCaption[]>([]);
   const gameStartTimeRef = useRef<number>(Date.now());
   const gameSavedRef = useRef(false);
+
+  // 사용자 정보 가져오기
+  useEffect(() => {
+    async function loadUserProfile() {
+      const user = await getCurrentUser();
+      if (user && supabase) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("real_name")
+          .eq("id", user.id)
+          .single();
+        if (data?.real_name) {
+          setRealName(data.real_name);
+        }
+      }
+    }
+    loadUserProfile();
+  }, []);
 
   const makeMove = useCallback(
     (from: Square, to: Square, promotion?: string) => {
@@ -158,6 +179,7 @@ export function ChessBoard() {
       dna: finalDna,
       highlightCaptions: finalHighlights,
       durationSeconds,
+      realName: realName || undefined,
     }).then((res) => {
       if (res.success) {
         console.log("✅ 게임 기록 저장 완료");

@@ -37,6 +37,7 @@ export interface Database {
           final_fen: string;
           duration_seconds: number | null;
           player_id: string | null;
+          real_name: string | null;
         };
         Insert: {
           id?: string;
@@ -46,6 +47,7 @@ export interface Database {
           final_fen: string;
           duration_seconds?: number | null;
           player_id?: string | null;
+          real_name?: string | null;
         };
         Update: {
           id?: string;
@@ -55,6 +57,7 @@ export interface Database {
           final_fen?: string;
           duration_seconds?: number | null;
           player_id?: string | null;
+          real_name?: string | null;
         };
       };
       /** DNA 분석 데이터 테이블 */

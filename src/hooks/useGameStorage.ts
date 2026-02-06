@@ -62,6 +62,7 @@ export function useGameStorage() {
       dna: DnaSnapshot;
       highlightCaptions: HighlightCaption[];
       durationSeconds?: number;
+      realName?: string;
     }) => {
       if (!isConnected) {
         console.log("Supabase 미연결 - 로컬에서만 실행");
@@ -75,6 +76,7 @@ export function useGameStorage() {
           totalMoves: params.dna.moveCount,
           finalFen: params.finalFen,
           durationSeconds: params.durationSeconds,
+          realName: params.realName,
           dna: {
             aggressionScore: params.dna.aggressionScore,
             captureCount: Math.round(params.dna.captureRatio * params.dna.moveCount),

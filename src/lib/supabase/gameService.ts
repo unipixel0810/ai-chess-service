@@ -6,6 +6,7 @@ type GameRecordInsert = {
   total_moves: number;
   final_fen: string;
   duration_seconds?: number | null;
+  real_name?: string | null;
 };
 
 type DnaRecordInsert = {
@@ -36,6 +37,7 @@ export async function saveGameResult(params: {
   totalMoves: number;
   finalFen: string;
   durationSeconds?: number;
+  realName?: string;
   dna: {
     aggressionScore: number;
     captureCount: number;
@@ -67,6 +69,7 @@ export async function saveGameResult(params: {
       total_moves: params.totalMoves,
       final_fen: params.finalFen,
       duration_seconds: params.durationSeconds ?? null,
+      real_name: params.realName ?? null,
     };
 
     const { data: game, error: gameError } = await db
