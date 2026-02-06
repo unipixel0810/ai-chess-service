@@ -3,6 +3,30 @@
 export interface Database {
   public: {
     Tables: {
+      /** 사용자 프로필 테이블 */
+      profiles: {
+        Row: {
+          id: string;
+          real_name: string | null;
+          avatar_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          real_name?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          real_name?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       /** 게임 기록 테이블 */
       game_records: {
         Row: {
@@ -111,6 +135,11 @@ export interface Database {
     };
   };
 }
+
+/** 프로필 타입 */
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
+export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
 /** 게임 기록 타입 */
 export type GameRecord = Database["public"]["Tables"]["game_records"]["Row"];

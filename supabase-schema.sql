@@ -3,6 +3,15 @@
 -- Supabase Dashboard > SQL Editor 에서 실행하세요
 -- =====================================================
 
+-- 0. 사용자 프로필 테이블
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  real_name TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 1. 게임 기록 테이블
 CREATE TABLE IF NOT EXISTS game_records (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -42,6 +51,7 @@ CREATE TABLE IF NOT EXISTS move_records (
 );
 
 -- 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_profiles_real_name ON profiles(real_name);
 CREATE INDEX IF NOT EXISTS idx_game_records_created_at ON game_records(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_game_records_result ON game_records(result);
 CREATE INDEX IF NOT EXISTS idx_dna_records_game_id ON dna_records(game_id);
@@ -49,11 +59,15 @@ CREATE INDEX IF NOT EXISTS idx_move_records_game_id ON move_records(game_id);
 
 -- RLS (Row Level Security) 정책 설정
 -- 익명 사용자도 데이터를 읽고 쓸 수 있도록 설정 (데모용)
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE game_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dna_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE move_records ENABLE ROW LEVEL SECURITY;
 
 -- 모든 사용자에게 읽기/쓰기 허용 (데모용 - 프로덕션에서는 더 엄격하게)
+CREATE POLICY "Allow all access to profiles" ON profiles
+  FOR ALL USING (true) WITH CHECK (true);
+
 CREATE POLICY "Allow all access to game_records" ON game_records
   FOR ALL USING (true) WITH CHECK (true);
 

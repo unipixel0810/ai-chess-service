@@ -1,4 +1,5 @@
 import { supabase } from "./client";
+import type { ProfileInsert } from "./types";
 
 /**
  * Google OAuth 로그인
@@ -17,6 +18,27 @@ export async function signInWithGoogle() {
   });
 
   return { data, error };
+}
+
+/**
+ * 프로필 생성 또는 업데이트
+ */
+export async function upsertProfile(userId: string, realName: string, avatarUrl?: string) {
+  if (!supabase) return;
+
+  const profile: ProfileInsert = {
+    id: userId,
+    real_name: realName,
+    avatar_url: avatarUrl || null,
+  };
+
+  const { error } = await supabase
+    .from("profiles")
+    .upsert(profile, { onConflict: "id" });
+
+  if (error) {
+    console.error("프로필 저장 실패:", error);
+  }
 }
 
 /**

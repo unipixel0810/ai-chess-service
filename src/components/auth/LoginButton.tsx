@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signInWithGoogle, signOut, onAuthStateChange } from "@/lib/supabase/auth";
+import { signInWithGoogle, signOut, onAuthStateChange, upsertProfile } from "@/lib/supabase/auth";
+import { supabase } from "@/lib/supabase/client";
+import type { Profile } from "@/lib/supabase/types";
 
 type User = {
   id: string;
@@ -14,11 +16,31 @@ type User = {
 
 export default function LoginButton() {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const { data } = onAuthStateChange((u) => {
-      setUser(u as User | null);
+    const { data } = onAuthStateChange(async (u) => {
+      const userData = u as User | null;
+      setUser(userData);
+
+      if (userData && supabase) {
+        // 프로필 저장
+        const realName = userData.user_metadata?.full_name || userData.email?.split("@")[0] || "사용자";
+        const avatarUrl = userData.user_metadata?.avatar_url;
+        await upsertProfile(userData.id, realName, avatarUrl);
+
+        // 프로필 조회
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userData.id)
+          .single();
+        
+        setProfile(profileData);
+      } else {
+        setProfile(null);
+      }
     });
 
     return () => {
@@ -40,18 +62,28 @@ export default function LoginButton() {
   };
 
   if (user) {
+    const displayName = profile?.real_name || user.user_metadata?.full_name || user.email;
+    const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url;
+
     return (
       <div className="flex items-center gap-3">
-        {user.user_metadata?.avatar_url && (
+        {avatarUrl && (
           <img
-            src={user.user_metadata.avatar_url}
+            src={avatarUrl}
             alt="프로필"
             className="w-8 h-8 rounded-full border-2 border-cyan-400"
           />
         )}
-        <span className="text-cyan-300 text-sm">
-          {user.user_metadata?.full_name || user.email}
-        </span>
+        <div className="flex flex-col">
+          <span className="text-cyan-300 text-sm font-medium">
+            {displayName}
+          </span>
+          {profile?.real_name && (
+            <span className="text-cyan-500 text-xs">
+              실명: {profile.real_name}
+            </span>
+          )}
+        </div>
         <button
           onClick={handleLogout}
           disabled={loading}
