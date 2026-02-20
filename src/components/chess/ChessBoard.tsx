@@ -5,10 +5,12 @@ import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import { useDNAAnalyzer } from "@/lib/dna/DNA_Analyzer";
 import { useGameStorage } from "@/hooks/useGameStorage";
+import { useChessAdvice } from "@/hooks/useChessAdvice";
 import { isUserOverwhelmed, getFallbackBestMove } from "@/lib/chessEngine";
 import type { GameResult } from "@/lib/marcusFeedback";
 import { GameCaption } from "@/components/ui/captions/GameCaption";
 import { ChessDNAReport, type HighlightCaption } from "./ChessDNAReport";
+import { AdviceModal } from "./AdviceModal";
 import type { Square } from "chess.js";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { supabase } from "@/lib/supabase/client";
@@ -33,6 +35,7 @@ export function ChessBoard() {
     reset: resetDna,
   } = useDNAAnalyzer();
   const { isConnected, isSaving, stats, saveGame } = useGameStorage();
+  const { advice, isLoading: isAdviceLoading, isModalOpen, requestAdvice, closeModal, isAvailable: isAdviceAvailable } = useChessAdvice();
   const [captionVisible, setCaptionVisible] = useState(false);
   const [blunderCaptionVisible, setBlunderCaptionVisible] = useState(false);
   const [lastUserMoveCount, setLastUserMoveCount] = useState(0);
@@ -199,52 +202,82 @@ export function ChessBoard() {
   }, [resetDna]);
 
   return (
-    <div className="relative rounded-xl p-2 shadow-[0_0_30px_rgba(34,211,238,0.25),0_0_60px_rgba(168,85,247,0.1)] ring-2 ring-cyan-500/50 ring-offset-2 ring-offset-slate-900">
-      {/* Supabase 연결 상태 & 통계 */}
-      <div className="absolute -top-8 left-0 right-0 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-gray-500"}`} />
-          <span className="text-slate-400">
-            {isConnected ? "DB 연결됨" : "로컬 모드"}
-          </span>
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative rounded-xl p-2 shadow-[0_0_30px_rgba(34,211,238,0.25),0_0_60px_rgba(168,85,247,0.1)] ring-2 ring-cyan-500/50 ring-offset-2 ring-offset-slate-900">
+        {/* Supabase 연결 상태 & 통계 */}
+        <div className="absolute -top-8 left-0 right-0 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-gray-500"}`} />
+            <span className="text-slate-400">
+              {isConnected ? "DB 연결됨" : "로컬 모드"}
+            </span>
+          </div>
+          {stats && stats.total > 0 && (
+            <span className="text-slate-400">
+              전적: {stats.wins}승 {stats.losses}패 {stats.draws}무 ({stats.winRate}%)
+            </span>
+          )}
         </div>
-        {stats && stats.total > 0 && (
-          <span className="text-slate-400">
-            전적: {stats.wins}승 {stats.losses}패 {stats.draws}무 ({stats.winRate}%)
-          </span>
+        <Chessboard
+          position={fen}
+          onPieceDrop={onDrop}
+          boardWidth={400}
+          arePiecesDraggable={!isThinking && game.turn() === "w"}
+          boardOrientation="white"
+        />
+        {isThinking && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+            <span className="text-white font-bold">엔진 생각 중...</span>
+          </div>
         )}
+        <GameCaption
+          type="entertainment"
+          text={aggressionCaption}
+          visible={captionVisible}
+          onComplete={() => setCaptionVisible(false)}
+        />
+        <GameCaption
+          type="entertainment"
+          text="AI의 치명적인 실수?!"
+          visible={blunderCaptionVisible}
+          onComplete={() => setBlunderCaptionVisible(false)}
+        />
+        <ChessDNAReport
+          open={reportOpen}
+          result={reportResult}
+          dnaSnapshot={reportDna}
+          highlightCaptions={reportHighlights}
+          onClose={() => setReportOpen(false)}
+          onPlayAgain={handlePlayAgain}
+        />
       </div>
-      <Chessboard
-        position={fen}
-        onPieceDrop={onDrop}
-        boardWidth={400}
-        arePiecesDraggable={!isThinking && game.turn() === "w"}
-        boardOrientation="white"
-      />
-      {isThinking && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
-          <span className="text-white font-bold">엔진 생각 중...</span>
-        </div>
+
+      {/* AI 조언 버튼 */}
+      {isAdviceAvailable && game.turn() === "w" && !game.isGameOver() && (
+        <button
+          onClick={() => requestAdvice(fen, aggressionScore)}
+          disabled={isThinking || isAdviceLoading}
+          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold rounded-lg shadow-lg transition-all transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+        >
+          <span className="text-2xl">🤖</span>
+          <span>{isAdviceLoading ? "분석 중..." : "AI 조언 받기"}</span>
+        </button>
       )}
-      <GameCaption
-        type="entertainment"
-        text={aggressionCaption}
-        visible={captionVisible}
-        onComplete={() => setCaptionVisible(false)}
-      />
-      <GameCaption
-        type="entertainment"
-        text="AI의 치명적인 실수?!"
-        visible={blunderCaptionVisible}
-        onComplete={() => setBlunderCaptionVisible(false)}
-      />
-      <ChessDNAReport
-        open={reportOpen}
-        result={reportResult}
-        dnaSnapshot={reportDna}
-        highlightCaptions={reportHighlights}
-        onClose={() => setReportOpen(false)}
-        onPlayAgain={handlePlayAgain}
+
+      {/* 다시 시작 버튼 */}
+      <button
+        onClick={handlePlayAgain}
+        className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+      >
+        🔄 다시 시작
+      </button>
+
+      {/* AI 조언 모달 */}
+      <AdviceModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        advice={advice}
+        isLoading={isAdviceLoading}
       />
     </div>
   );

@@ -10,6 +10,7 @@
     "prd": "node scripts/generate-prd.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.93.3",
     "chess.js": "^1.0.0-beta.8",
     "framer-motion": "^11.0.0",
